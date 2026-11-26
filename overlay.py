@@ -626,31 +626,35 @@ class WebRequestHandler(BaseHTTPRequestHandler):
         # Silent HTTP logging
         return
 
+    def do_HEAD(self):
+        self.do_GET()
+
     def do_GET(self):
         parsed = urlparse(self.path)
+        path = parsed.path.rstrip('/') or '/'
 
-        if parsed.path in ("/", "/index.html"):
+        if path in ("/", "/index.html"):
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(CONTROLLER_HTML.encode("utf-8"))
 
-        elif parsed.path in ("/display", "/project", "/screen"):
+        elif path in ("/display", "/project", "/screen"):
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(PROJECTOR_HTML.encode("utf-8"))
 
-        elif parsed.path == "/api/status":
+        elif path == "/api/status":
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(store.get_json().encode("utf-8"))
 
-        elif parsed.path == "/api/stream":
+        elif path == "/api/stream":
             # Server-Sent Events (SSE) Live Push Stream
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream")
@@ -690,16 +694,17 @@ class WebRequestHandler(BaseHTTPRequestHandler):
             payload = {}
 
         parsed = urlparse(self.path)
+        path = parsed.path.rstrip('/') or '/'
 
-        if parsed.path == "/api/text":
+        if path == "/api/text":
             store.update_text(payload.get("text", ""))
-        elif parsed.path == "/api/color":
+        elif path == "/api/color":
             store.update_color(payload.get("color", "#10b981"))
-        elif parsed.path == "/api/size":
+        elif path == "/api/size":
             store.update_size(int(payload.get("delta", 0)))
-        elif parsed.path == "/api/toggle":
+        elif path == "/api/toggle":
             store.toggle_hidden()
-        elif parsed.path == "/api/exit":
+        elif path == "/api/exit":
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Access-Control-Allow-Origin", "*")
