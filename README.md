@@ -1,48 +1,30 @@
-# ⚡ Screen Overlay Remote
+# ⚡ Screen Overlay Remote (Headless Daemon + Mobile Projector)
 
-[![OS: Windows 10 / 11](https://img.shields.io/badge/OS-Windows%2010%20%7C%2011-0078D6?logo=windows&logoColor=white)](https://microsoft.com)
+[![OS: Windows / Cross-Platform](https://img.shields.io/badge/OS-Windows%20%7C%20Linux%20%7C%20macOS-0078D6?logo=windows&logoColor=white)](https://microsoft.com)
 [![Python: 3.8+](https://img.shields.io/badge/Python-3.8%2B-3776AB?logo=python&logoColor=white)](https://python.org)
 [![Dependencies: 0 Pip Packages](https://img.shields.io/badge/Dependencies-0%20Pip%20Packages-success)](https://github.com/b4uheart/screen-overlay-remote)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-A lightweight, high-performance desktop screen overlay for Windows with **zero taskbar footprint** and **full real-time control over local Wi-Fi from your smartphone or tablet**.
+A lightweight, **100% headless network daemon** that runs on your host PC and **projects live text, cues, numbers, and notes directly onto any smartphone or tablet browser over local Wi-Fi**.
 
-Built specifically for presentations, live streaming, meeting HUDs, and discreet presenter notes.
-
----
-
-## 🌟 Key Features
-
-- **100% Transparent Background:** Only the active text is rendered; no borders, title bars, or canvas background.
-- **Full Mouse Click-Through:** Clicks pass straight through to any window, presentation, or desktop underneath (`WS_EX_TRANSPARENT`).
-- **Screen Capture Protection:** Completely invisible in screen shares, screenshots, and screen recordings (Zoom, OBS Studio, Discord, Microsoft Teams, Snipping Tool) using Windows native `SetWindowDisplayAffinity` (`WDA_EXCLUDEFROMCAPTURE = 0x11`).
-- **Zero Taskbar Footprint:** Runs windowless via `pythonw.exe` — your taskbar only shows your presentation software (e.g., Zoom).
-- **Mobile Wi-Fi Remote Control:** Built-in web controller served directly from Python. Type text, switch presets, move position, adjust font size, and change colors live from your phone.
-- **Persistent Topmost Watchdog:** Commands the Windows Desktop Window Manager (DWM) every 250ms via native 64-bit `SetWindowPos(HWND_TOPMOST)` so full-screen slides or newly focused windows never bury the overlay.
-- **Zero External Dependencies:** Built entirely using Python standard libraries. No `pip install` required!
+Designed for situations where you want presenter cues, teleprompting, or notes **without rendering any windows or pixels on your host PC monitor**.
 
 ---
 
-## 📋 Prerequisites & Dependencies
+## 🌟 Key Architecture & Highlights
 
-### 1. Operating System
-* **Windows 10 (Version 2004 or later) or Windows 11** *(required for `WDA_EXCLUDEFROMCAPTURE` capture exclusion)*.
-
-### 2. Python Environment
-* **Python 3.8 or higher** (Python 3.10+ recommended).
-* **Included Standard Libraries Used:**
-  * `ctypes` (Win32 user32 API bindings)
-  * `tkinter` (Native GUI rendering engine)
-  * `http.server` (Lightweight remote web server)
-  * `socket`, `threading`, `json`, `os`, `sys`
-
-> **Note on Python Installation:**  
-> When installing Python on Windows, make sure the default option **"tcl/tk and IDLE"** is checked (this is checked by default in the official installer from [python.org](https://www.python.org/downloads/)).  
-> **No third-party packages (`pip install`) are required!**
+- **100% Headless on Host PC:** No Tkinter window, no Win32 top-level window, and **zero pixels drawn on your PC monitor**.
+- **Immune to Windows Desktop Switches:** Because nothing is drawn on the PC display, separate Windows Desktops (`CreateDesktop` / `SwitchDesktop`), proctoring software, and lock-down environments cannot occlude or interact with it.
+- **Zero OS GUI Footprint:** Invisible to `EnumWindows` window enumeration because no graphical window handle (`HWND`) exists on the host.
+- **Dual Web Interface:**
+  1. **Mobile Projector Screen (`/display`):** The live fullscreen display you open on your phone or tablet. OLED pitch-black background, ultra-crisp typography, auto-reconnecting Server-Sent Events (SSE), and Screen WakeLock (screen never turns off).
+  2. **Controller Interface (`/`):** The remote control dashboard with custom text input, fast single-tap buttons (`1`, `2`, `3`, `4` and `A`, `B`, `C`, `D`), sequences, color swatches, and font steppers.
+- **Instant Live Push (<30ms):** Uses HTTP Server-Sent Events (SSE) to push text updates to connected mobile screens immediately without polling lag.
+- **Zero External Dependencies:** Built 100% with standard Python libraries (`http.server`, `socket`, `threading`, `json`). No `pip install` required!
 
 ---
 
-## 🚀 Installation & Setup
+## 🚀 Quick Start
 
 ### 1. Clone the Repository
 ```bash
@@ -50,83 +32,71 @@ git clone https://github.com/b4uheart/screen-overlay-remote.git
 cd screen-overlay-remote
 ```
 
-### 2. Run the Overlay
+### 2. Start the Daemon
 
-You have two ways to start the overlay depending on your scenario:
-
-| File | Mode | Use Case |
+| File | Mode | Description |
 | :--- | :--- | :--- |
-| **`start_silent.vbs`** *(Recommended)* | **Stealth Mode** | Starts via `pythonw.exe` with **0 command windows and 0 taskbar icons**. Shows a brief 3-second self-closing toast notification on launch. |
-| **`run_overlay.bat`** | **Interactive / Debug** | Opens a Command Prompt window displaying your local Wi-Fi IP and connection URL. |
+| **`start_silent.vbs`** *(Recommended)* | **Stealth Mode** | Starts `pythonw.exe` in the background with **0 command windows and 0 taskbar buttons**. Shows a brief 4-second self-closing toast notification on start. |
+| **`run_overlay.bat`** | **Console Mode** | Launches with a Command Prompt window displaying your exact local Wi-Fi IP and URLs. |
 
 ---
 
-## 📱 Connecting Your Phone / Tablet
+## 📱 How to Use with Your Phone
 
-1. Connect your phone or tablet to the **same Wi-Fi network** as your Windows PC.
-2. Open any browser (Safari, Chrome, Firefox) on your mobile device.
-3. Navigate to:
-   ```text
-   http://<YOUR-PC-IP>:5050
-   ```
-   *(To find your PC's IP address manually, open Command Prompt on your PC and run `ipconfig`, then look for IPv4 Address, e.g. `192.168.1.50`)*.
+1. Make sure your phone/tablet is connected to the **same Wi-Fi network** as your PC.
+2. Open your phone's browser (Safari, Chrome, etc.):
 
----
+### Step A: Open the Projector Screen on Your Phone
+Navigate to:
+```text
+http://<YOUR-PC-IP>:5050/display
+```
+* **Fullscreen:** Tap anywhere on the screen to enter full-screen mode.
+* **Stay-Awake:** Keeps your phone screen locked ON so it never sleeps or dims during use.
 
-## 🎮 Mobile Remote Controls
+### Step B: Open the Controller (on PC or Second Phone)
+Navigate to:
+```text
+http://<YOUR-PC-IP>:5050/
+```
+*(Or open `http://localhost:5050` in a browser on your PC)*
 
-The mobile web controller includes:
-
-* **Live Output Monitor:** A real-time mirror showing the exact text currently displayed on your PC screen, along with position coordinates `(X, Y)`, font size, and color.
-* **Instant Text Input:** Type custom text into the field and tap **Send** (or press Enter).
-* **Quick Presets:** One-tap chips for:
-  * Letters: `A`, `B`, `C`, `D`
-  * Digits: `1`, `2`, `3`, `4`
-  * Sequences: `45, a, b, c`, `Ready`, and `🧹 Clear` (blank screen).
-* **3x3 D-Pad Positioner:** Arrow buttons (`▲`, `▼`, `◀`, `▶`) to nudge text by 25px in any direction, plus corner snaps (`↖ Top-Left`, `↗ Top-Right`, `↙ Bottom-Left`, `↘ Bottom-Right`, `● Center`).
-* **Styling Tools:**
-  * 6 preset color swatches: Classic Black, Emerald Green, Pure White, Crimson Red, Electric Cyan, Amber Gold.
-  * `A+ Enlarge` / `A- Shrink` buttons with real-time pixel size readout.
-* **Visibility Toggle:** Instantly hide or show the overlay text.
-* **Remote Shutdown:** Cleanly terminate the background process directly from your phone.
+Whenever you tap **`1`**, **`2`**, **`A`**, **`B`**, or type custom text on the controller, it **instantly appears on the mobile projector screen**!
 
 ---
 
-## 🛑 How to Stop / Close the Overlay
+## 🎮 Controller Features
 
-Since the overlay is click-through and runs with no taskbar button in silent mode, you can stop it using any of these 3 methods:
+- **Instant Quick Buttons:**
+  - Numbers: `1`, `2`, `3`, `4`
+  - Letters: `A`, `B`, `C`, `D`
+  - Sequences: `45, a, b, c`, `Ready`, `🧹 Clear`
+- **Live Text Input:** Type any phrase or response and click **Send**.
+- **Color Styling:** Emerald Green, Crisp White, Electric Cyan, Amber Gold, Crimson Red, and Violet.
+- **Font Size Steppers:** `A+ Bigger Font` and `A- Smaller Font`.
+- **Visibility Toggle:** Instantly hide or reveal text on the phone screen with one tap.
+- **Remote Shutdown:** Cleanly stop the background PC daemon directly from the web interface.
 
-1. **From Your Phone (Most Discreet):** Tap the red **❌ Close Overlay on PC** button at the bottom of the mobile web controller.
-2. **Global Keyboard Hotkey:** Press **`Ctrl + Shift + X`** anywhere on your PC keyboard.
-3. **1-Click Stop Script:** Double-click **`stop_overlay.bat`** on your PC to kill the background process immediately.
+---
+
+## 🛑 How to Stop / Close the Daemon
+
+1. **From the Web Controller:** Tap the red **❌ Shutdown Host Daemon** button.
+2. **1-Click Stop Script:** Double-click **`stop_overlay.bat`** on your PC to kill the background process immediately.
+3. **From Console (if using BAT):** Press **`Ctrl + C`** in the command prompt.
 
 ---
 
 ## 📁 Repository Structure
 
 ```text
-├── overlay.py         # Main script (Tkinter overlay + multi-threaded HTTP server)
+├── overlay.py         # Multi-threaded headless daemon (SSE server + Controller & Display)
 ├── start_silent.vbs   # Silent launcher (0 taskbar presence, runs via pythonw)
 ├── run_overlay.bat    # Interactive launcher with console connection info
 ├── stop_overlay.bat   # 1-click process cleanup script
 ├── .gitignore         # Git ignore rules
 └── README.md          # Project documentation
 ```
-
----
-
-## 🔧 Troubleshooting
-
-### 1. Phone cannot connect to `http://<IP>:5050`
-* Ensure both your phone and PC are on the **exact same Wi-Fi network** (not guest Wi-Fi or cellular data).
-* If Windows Defender Firewall shows a prompt when running Python for the first time, click **Allow access** on Private networks.
-* To check if the port is accessible, try visiting `http://localhost:5050` in a browser on the PC itself.
-
-### 2. `_tkinter` Not Found
-If you see an error like `No module named '_tkinter'`, run the official Python Windows installer again, choose **Modify**, and make sure the **"tcl/tk and IDLE"** feature is checked.
-
-### 3. Overlay Appears Behind Certain Apps
-The built-in watchdog calls native 64-bit `SetWindowPos(HWND_TOPMOST)` every 250ms to keep it on top. However, special Windows system surfaces (like the Windows UAC Secure Desktop or applications running on isolated desktops) are protected by the Windows kernel and do not allow standard desktop windows to composite over them.
 
 ---
 
